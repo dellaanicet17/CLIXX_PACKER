@@ -17,6 +17,14 @@ pipeline {
            }
         }
 
+        stage('Packer Initialization'){
+              steps {
+                sh '''
+                    cd images && /usr/bin/packer init image.pkr.hcl
+                '''
+              }
+            }        
+
         stage('Packer AMI Build'){
              steps {
                  sh '''
