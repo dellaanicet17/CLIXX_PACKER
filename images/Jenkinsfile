@@ -72,17 +72,16 @@ pipeline {
 
           stage('Build Vulnerability Report'){
              steps {
+                 // Use AWS credentials from the credentials store
+                 // withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: params.AWS_CREDS_ID]]) {
                  sh """
                  cd instances
-                 aws inspector start-assessment-run --assessment-run-name Hardeningrun_'${VERSION}' --assessment-template-arn "arn:aws:inspector:us-east-1:816069170174:target/0-C43LFIYv" --region us-east-1
+                 aws inspector start-assessment-run --assessment-run-name Hardeningrun_'${VERSION}' --assessment-template-arn "arn:aws:inspector:us-east-1:816069170174:target/0-C43LFIYv/template/0-jKVUP5WG" --region us-east-1
                  """  
                  //slackSend (color: '#FFFF00', message: "ENDING DEPLOYMENT: Job '${env.JOB_NAME} [${env.BUILD_NUMBER}]' (${env.BUILD_URL})")                        
          }
          }
-
-
        
-        
     }
 }
 
