@@ -1,11 +1,11 @@
-packer {
-  required_plugins {
-    amazon = {
-      source  = "github.com/hashicorp/amazon"
-      version = "~> 1"
-    }
-  }
-}
+#packer {
+#  required_plugins {
+#    amazon = {
+#      source  = "github.com/hashicorp/amazon"
+#      version = "~> 1"
+#    }
+#  }
+#}
 
 variable "aws_source_ami" {
   default = "amzn2-ami-kernel-5.10-hvm-2.0.20241001.0-x86_64-gp2"
