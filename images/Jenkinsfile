@@ -1,8 +1,8 @@
 pipeline {
     agent any
-//  parameters {
-//   credentials credentialType: 'com.cloudbees.jenkins.plugins.awscredentials.AWSCredentialsImpl', defaultValue: 'AWS_CREDS_AUTOMATION_ACCT', name: 'AWS_AUTOMATION_ACCOUNT_CRED', required: false
-// }
+  parameters {
+        string(name: 'AWS_CREDS_ID', defaultValue: 'AWS_CREDS_AUTOMATION_ACCT', description: 'AWS Credentials ID')
+    }
 
     environment {
         PATH = "${PATH}:${getTerraformPath()}"
@@ -11,17 +11,25 @@ pipeline {
     }
     stages{
 
-         stage('Initial Stage') {
-              steps {
+        stage('Initial Stage') {
+            steps {
                 script {
                 def userInput = input(id: 'confirm', message: 'Start Pipeline?', parameters: [ [$class: 'BooleanParameterDefinition', defaultValue: false, description: 'Start Pipeline', name: 'confirm'] ])
-             }
-           }
+                }
+            }
         }
+
+        stage('Packer Initialization'){
+              steps {
+                sh '''
+                    cd images && /usr/bin/packer init image.pkr.hcl
+                '''
+              }
+            }         
 
         stage('Packer AMI Build'){
              steps {
-                 slackSend (color: '#FFFF00', message: "STARTING PACKER IMAGE BUILD: Job '${env.JOB_NAME} [${env.BUILD_NUMBER}]' (${env.BUILD_URL})")
+                 //slackSend (color: '#FFFF00', message: "STARTING PACKER IMAGE BUILD: Job '${env.JOB_NAME} [${env.BUILD_NUMBER}]' (${env.BUILD_URL})")
                  sh '''
                  cd images
                  sed -i "s/ami-stack-'[0-9]*$'/'${AMI_ID}'/" ./image.pkr.hcl 
@@ -35,7 +43,7 @@ pipeline {
 
         stage('Terraform init'){
              steps {
-                 slackSend (color: '#FFFF00', message: "STARTING TERRAFORM DEPLOYMENT: Job '${env.JOB_NAME} [${env.BUILD_NUMBER}]' (${env.BUILD_URL})")
+                 //slackSend (color: '#FFFF00', message: "STARTING TERRAFORM DEPLOYMENT: Job '${env.JOB_NAME} [${env.BUILD_NUMBER}]' (${env.BUILD_URL})")
                  sh """
                  cd instances
                  terraform init -upgrade 
@@ -54,7 +62,7 @@ pipeline {
 
         stage('Build Instance and Vulnerability Scan'){
              steps {
-                 slackSend (color: '#FFFF00', message: "STARTING INFRASTRUCTURE BUILD AND VULNERABILITY SCAN: Job '${env.JOB_NAME} [${env.BUILD_NUMBER}]' (${env.BUILD_URL})")
+                 //slackSend (color: '#FFFF00', message: "STARTING INFRASTRUCTURE BUILD AND VULNERABILITY SCAN: Job '${env.JOB_NAME} [${env.BUILD_NUMBER}]' (${env.BUILD_URL})")
                  sh """
                  cd instances
                  terraform apply -auto-approve
@@ -66,9 +74,9 @@ pipeline {
              steps {
                  sh """
                  cd instances
-                 aws inspector start-assessment-run --assessment-run-name Hardeningrun_'${VERSION}' --assessment-template-arn "arn:aws:inspector:us-east-1:336528460023:target/0-icADPfPR/template/0-vfjqO1E7" --region us-east-1
+                 aws inspector start-assessment-run --assessment-run-name Hardeningrun_'${VERSION}' --assessment-template-arn "arn:aws:inspector:us-east-1:816069170174:target/0-C43LFIYv" --region us-east-1
                  """  
-                 slackSend (color: '#FFFF00', message: "ENDING DEPLOYMENT: Job '${env.JOB_NAME} [${env.BUILD_NUMBER}]' (${env.BUILD_URL})")                        
+                 //slackSend (color: '#FFFF00', message: "ENDING DEPLOYMENT: Job '${env.JOB_NAME} [${env.BUILD_NUMBER}]' (${env.BUILD_URL})")                        
          }
          }
 
