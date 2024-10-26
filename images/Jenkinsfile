@@ -1,100 +1,97 @@
 pipeline {
     agent any
-  parameters {
+    
+    parameters {
         string(name: 'AWS_CREDS_ID', defaultValue: 'AWS_CREDS_AUTOMATION_ACCT', description: 'AWS Credentials ID')
     }
 
     environment {
         PATH = "${PATH}:${getTerraformPath()}"
-        AMI_ID="stack-ami-${BUILD_NUMBER}"
+        AMI_ID = "stack-ami-${BUILD_NUMBER}"
         VERSION = "1.0.${BUILD_NUMBER}"
     }
-    stages{
 
+    stages {
         stage('Initial Stage') {
             steps {
                 script {
-                def userInput = input(id: 'confirm', message: 'Start Pipeline?', parameters: [ [$class: 'BooleanParameterDefinition', defaultValue: false, description: 'Start Pipeline', name: 'confirm'] ])
+                    def userInput = input(id: 'confirm', message: 'Start Pipeline?', parameters: [
+                        [$class: 'BooleanParameterDefinition', defaultValue: false, description: 'Start Pipeline', name: 'confirm']
+                    ])
                 }
             }
         }
 
-        stage('Packer Initialization'){
-              steps {
+        stage('Packer Initialization') {
+            steps {
                 sh '''
                     cd images && /usr/bin/packer init image.pkr.hcl
                 '''
-              }
-            }         
-
-        stage('Packer AMI Build'){
-             steps {
-                 //slackSend (color: '#FFFF00', message: "STARTING PACKER IMAGE BUILD: Job '${env.JOB_NAME} [${env.BUILD_NUMBER}]' (${env.BUILD_URL})")
-                 sh '''
-                 cd images
-                 sed -i "s/ami-stack-'[0-9]*$'/'${AMI_ID}'/" ./image.pkr.hcl 
-                 export PACKER_LOG=1
-                 export PACKER_LOG_PATH=$WORKSPACE/packer.log
-                 /usr/bin/packer build -force image.pkr.hcl 
-                 '''
-               
-         }
-         }
-
-        stage('Terraform init'){
-             steps {
-                 //slackSend (color: '#FFFF00', message: "STARTING TERRAFORM DEPLOYMENT: Job '${env.JOB_NAME} [${env.BUILD_NUMBER}]' (${env.BUILD_URL})")
-                 sh """
-                 cd instances
-                 terraform init -upgrade 
-                 """                  
-         }
-         }
-
-        stage('Terraform Plan'){
-             steps {
-                 sh """
-                 cd instances
-                 terraform plan -out=tfplan -input=false
-                 """                          
-         }
-         }
-
-        stage('Build Instance and Vulnerability Scan'){
-             steps {
-                 //slackSend (color: '#FFFF00', message: "STARTING INFRASTRUCTURE BUILD AND VULNERABILITY SCAN: Job '${env.JOB_NAME} [${env.BUILD_NUMBER}]' (${env.BUILD_URL})")
-                 sh """
-                 cd instances
-                 terraform apply -auto-approve
-                 """                          
-         }
-         }
-
-        stage('Build Vulnerability Report'){
-            steps {
-                // Use AWS credentials from the credentials store
-                withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: params.AWS_CREDS_ID]]) {
-                sh """
-                cd instances
-                aws inspector start-assessment-run --assessment-run-name Hardeningrun_'${VERSION}' --assessment-template-arn "arn:aws:inspector:us-east-1:816069170174:target/0-zNlUNTvI/template/0-ZnKis9cm" --region us-east-1
-                """  
-                //slackSend (color: '#FFFF00', message: "ENDING DEPLOYMENT: Job '${env.JOB_NAME} [${env.BUILD_NUMBER}]' (${env.BUILD_URL})")                        
             }
-         }
-       
+        }
+
+        stage('Packer AMI Build') {
+            steps {
+                sh '''
+                    cd images
+                    sed -i "s/ami-stack-'[0-9]*$'/'${AMI_ID}'/" ./image.pkr.hcl 
+                    export PACKER_LOG=1
+                    export PACKER_LOG_PATH=$WORKSPACE/packer.log
+                    /usr/bin/packer build -force image.pkr.hcl 
+                '''
+            }
+        }
+
+        stage('Terraform Init') {
+            steps {
+                sh '''
+                    cd instances
+                    terraform init -upgrade 
+                '''
+            }
+        }
+
+        stage('Terraform Plan') {
+            steps {
+                sh '''
+                    cd instances
+                    terraform plan -out=tfplan -input=false
+                '''
+            }
+        }
+
+        stage('Build Instance and Vulnerability Scan') {
+            steps {
+                sh '''
+                    cd instances
+                    terraform apply -auto-approve
+                '''
+            }
+        }
+
+        stage('Build Vulnerability Report') {
+            steps {
+                withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: params.AWS_CREDS_ID]]) {
+                    sh '''
+                        cd instances
+                        aws inspector start-assessment-run --assessment-run-name Hardeningrun_'${VERSION}' --assessment-template-arn "arn:aws:inspector:us-east-1:816069170174:target/0-zNlUNTvI/template/0-ZnKis9cm" --region us-east-1
+                    '''
+                }
+            }
+        }
     }
 }
 
- def getTerraformPath(){
-        def tfHome= tool name: 'terraform-14', type: 'terraform'
-        return tfHome
-    }
+def getTerraformPath() {
+    def tfHome = tool name: 'terraform-14', type: 'terraform'
+    return tfHome
+}
 
-//  def getAnsiblePath(){
-//         def AnsibleHome= tool name: 'Ansible', type: 'org.jenkinsci.plugins.ansible.AnsibleInstallation'
-//         return AnsibleHome
-//     }
+// def getAnsiblePath() {
+//     def AnsibleHome = tool name: 'Ansible', type: 'org.jenkinsci.plugins.ansible.AnsibleInstallation'
+//     return AnsibleHome
+// }
 
-// def getPackerPath(){
-//        def PackerHome= tool name: 'Packer', type: 'biz.neustar.jenkins.plugins.packer.PackerInstallation'
-//     }
+// def getPackerPath() {
+//     def PackerHome = tool name: 'Packer', type: 'biz.neustar.jenkins.plugins.packer.PackerInstallation'
+// }
