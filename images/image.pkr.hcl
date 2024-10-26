@@ -12,11 +12,11 @@ variable "aws_source_ami" {
 }
 
 variable "aws_instance_type" {
-  default = "t2.micro"
+  default = "t2.small"
 }
 
 variable "ami_name" {
-  default = "ami-stack-golden-image-01"
+  default = "ami-stack-51"
 }
 
 variable "component" {
