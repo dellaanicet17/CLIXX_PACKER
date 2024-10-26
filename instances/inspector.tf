@@ -16,7 +16,7 @@ resource "aws_inspector_assessment_template" "stack_hardening_rules" {
   target_arn = aws_inspector_assessment_target.assessment.arn
   duration   = 3600
 
-  "rulesPackageArns": [
+  rulesPackageArns = [
         "arn:aws:inspector:us-east-1:316112463485:rulespackage/0-PmNV0Tcd",
         "arn:aws:inspector:us-east-1:316112463485:rulespackage/0-R01qwB5Q",
         "arn:aws:inspector:us-east-1:316112463485:rulespackage/0-gEjTy7T7",
