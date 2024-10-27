@@ -7,6 +7,8 @@ sudo systemctl start httpd
 sudo systemctl enable httpd
 sudo systemctl is-enabled httpd
 
+sudo yum install -y https://s3.amazonaws.com/ec2-downloads-windows/SSMAgent/latest/linux_amd64/amazon-ssm-agent.rpm
+
 ##Add ec2-user to Apache group and grant permissions to /var/www
 sudo usermod -a -G apache ec2-user
 sudo chown -R ec2-user:apache /var/www
